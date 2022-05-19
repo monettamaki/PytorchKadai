@@ -97,7 +97,7 @@ def dataload(x, y):
 def train(EPOCHS, model, train_loader, input_data_time, output_data_time):
     #最適化手法の定義
     learning_rate = 0.001
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  
     n_total_steps = len(train_loader)
     record_loss_train = []
@@ -141,34 +141,56 @@ def train(EPOCHS, model, train_loader, input_data_time, output_data_time):
             "val_epoch: {}, val_loss: {}".format(epoch, loss_train, epoch, loss_test))
 
     return test, test_x, test_y, output, val_output, record_loss_train, record_loss_test
-"""
+
 def open(model, input_data_time):
     model = model.to(device)
     input_data_0 = []
     open_xy = []
+    input_open_4p = []
     input_data_0 = [[[input_data_time[0][0][0],input_data_time[0][0][1]]]]
     input_data_0 = np.transpose(input_data_0, (1, 0, 2))
     input_data_0 = torch.FloatTensor(input_data_0)
-    arr_2d = np.array(input_data_0)
-    print("input_data_0のsize = ", arr_2d.shape)
-    print("input_data_0=", input_data_0)
-    open_xy1 = model(input_data_0).to(device)
+    input_data_1 = [[[input_data_time[0][1][0],input_data_time[0][1][1]]]]
+    input_data_1 = np.transpose(input_data_1, (1, 0, 2))
+    input_data_1 = torch.FloatTensor(input_data_1)
+    input_data_2 = [[[input_data_time[0][2][0],input_data_time[0][2][1]]]]
+    input_data_2 = np.transpose(input_data_2, (1, 0, 2))
+    input_data_2 = torch.FloatTensor(input_data_2)
+    input_data_3 = [[[input_data_time[0][3][0],input_data_time[0][3][1]]]]
+    input_data_3= np.transpose(input_data_3, (1, 0, 2))
+    input_data_3 = torch.FloatTensor(input_data_3)
+    input_open_4p.append(input_data_0)
+    input_open_4p.append(input_data_1)
+    input_open_4p.append(input_data_2)
+    input_open_4p.append(input_data_3)
+    print("input_open_4p = ",input_open_4p)
+    input_open_4p = torch.cat((input_open_4p), 1)
+    print("input_open_4p = ",input_open_4p)
+    #input_open_4p_size = np.array(input_open_4p)
+    #print("input_open_4pのsize = ", input_open_4p_size.shape)#input_open_4pのsize =  (1, 4, 2)
+    open_xy1 = model(input_open_4p).to(device)
     open_xy.append(input_data_0)
-    #open_xy0.append(model(input_data_0).to(device))
+    open_xy.append(input_data_1)
+    open_xy.append(input_data_2)
+    open_xy.append(input_data_3)
+    #open_xy.append(input_open_4p)
     print("open_xy1=", open_xy1)
-    open_xy2 = model(open_xy1).to(device)
-    print("open_xy2=", open_xy2)
-    open_datax.append(input_data_time[0][0][0])
-    print("X: {}",open_datax)#[tensor(2.)]
-    open_datay.append(input_data_time[0][0][1])
-    print("Y: {}",open_datay)#[tensor(4.)]
-    for i in range(49):
-        open_xy1 = model(open_xy1).to(device)
-        open_xy.append(open_xy1)
-    #open_xysize = np.array(open_xy)
-    #print("open_xysize = ",open_xysize.shape)
+    open_xy4 = open_xy1[:,3:4]
+        #open_xy = torch.cat((open_xy), 1) 
+    print("open_xy4=", open_xy4)
+    print(open_xy4.shape)
+    open_xy4_t = []
+    open_xy4_t.append(open_xy4)
+    
+
+    print("open_xy=", open_xy)
+    for i in range(46):
+        open_xy4 = model(open_xy4).to(device)
+        open_xy.append(open_xy4)
+    print("open_xy=", open_xy)
     open_xy = torch.cat((open_xy), 1)
-    return open_xy"""
+    return open_xy
+   
 
 def main():
     EPOCHS = 10000
@@ -180,30 +202,25 @@ def main():
     num_epochs = 2
     #batch_size = 100
     model = NeuralNet(input_size, hidden_size, num_classes).to(device)
-
-
     input_data_time, output_data_time, train_loader = dataload(x, y)
+    open(model, input_data_time)
+
     #tensor([[x, y],[x, y],...,[x, y]])50個のx、yのリスト2*50
     test, test_x, test_y, output, val_output, record_loss_train, record_loss_test = train(EPOCHS, model, train_loader, input_data_time, output_data_time) 
     test = test.detach().numpy()
-    """open_xy = open(model, input_data_time)
-    print(input_data_time)
-    print(open_xy)
-    open_xy = open_xy.detach().numpy()"""
+    open_xy = open(model, input_data_time)
+    #print(input_data_time)
+    #print(open_xy)
+    open_xy = open_xy.detach().numpy()
     #test_x = test_x.detach().numpy()
     #test_y = test_y.detach().numpy()
-    val_output = val_output.detach().numpy()
+    #val_output = val_output.detach().numpy()
     #print("test_x=",test_x)
-    """output_x = []
-    output_y = []
-    for i in range(50):
-        output_x.append([open_xy[0][i][0]])
-        output_y.append([open_xy[0][i][1]])"""
     output_x = []
     output_y = []
     for i in range(50):
-        output_x.append([val_output[0][i][0]])
-        output_y.append([val_output[0][i][1]])
+        output_x.append([open_xy[0][i][0]])
+        output_y.append([open_xy[0][i][1]])
     plt.plot(output_x, output_y, linestyle="None", linewidth=0, marker='o')
     plt.show()
     plt.style.use('ggplot')
